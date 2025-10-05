@@ -12,3 +12,6 @@
 cli_assignment/
 data_project/
 qtm350-quiz01/
+
+/.quarto/
+**/*.quarto_ipynb

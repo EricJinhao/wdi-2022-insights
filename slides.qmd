@@ -8,10 +8,12 @@ format:
     transition: fade
     slide-number: true
     toc: true
+    embed-resources: true 
 execute:
   echo: false
   warning: false
   message: false
+  fig-format: png 
 ---
 
 # Welcome
