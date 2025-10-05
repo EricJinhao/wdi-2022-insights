@@ -1,0 +1,14 @@
+# macOS system files
+.DS_Store
+
+# Quarto output and cache
+*_files/
+*_cache/
+
+# Jupyter temp
+.ipynb_checkpoints/
+
+# Unnecessary project folders
+cli_assignment/
+data_project/
+qtm350-quiz01/
