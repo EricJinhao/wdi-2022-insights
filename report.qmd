@@ -1,0 +1,265 @@
+---
+title: "WDI 2022 Report"
+author: "Jinhao Tian"
+date: "2025-10-04"
+jupyter: qtm350
+format:
+  html:
+    toc: true
+    code-fold: show
+  pdf:
+    toc: true
+execute:
+  echo: true
+  warning: false
+  message: false
+bibliography: references.bib
+---
+
+# Data Loading
+
+In this section, I load the World Development Indicators dataset for 2022 [@worldbank2022].
+
+```{python}
+#| label: fig-head
+#| fig-cap: "Preview of the WDI sample (first 5 rows). Source: [World Bank WDI](https://databank.worldbank.org/source/world-development-indicators)."
+import pandas as pd
+
+# Load the dataset 
+df = pd.read_csv("wdi.csv")
+
+# Show a small preview (as a figure-like output)
+df.head()
+```
+# Exploratory Data Analysis (EDA)
+
+This section explores **GDP per capita**, **Life expectancy**, and **Inflation (CPI, annual %)** for 2022.
+
+## 1) GDP per capita (levels and distribution)
+
+I examine summary statistics, missingness, and the distribution in both raw and log scales.
+
+```{python}
+
+# quick summary in text output
+import numpy as np
+print("Missing values (gdp_per_capita):", df["gdp_per_capita"].isna().sum())
+print(df["gdp_per_capita"].describe())
+```
+
+```{python}
+#| label: fig-gdp-hist
+#| fig-cap: "Distribution of GDP per capita (USD, 2022). Source: [World Bank WDI](https://databank.worldbank.org/source/world-development-indicators)."
+import matplotlib.pyplot as plt
+x = df["gdp_per_capita"].dropna()
+plt.figure()
+plt.hist(x, bins=30)
+plt.title("GDP per Capita (USD, 2022)")
+plt.xlabel("USD")
+plt.ylabel("Count")
+plt.show()
+```
+
+```{python}
+#| label: fig-gdp-hist-log
+#| fig-cap: "Distribution of GDP per capita on log₁₀ scale (2022). Source: [World Bank WDI](https://databank.worldbank.org/source/world-development-indicators)."
+import numpy as np
+import matplotlib.pyplot as plt
+x = df["gdp_per_capita"].dropna()
+plt.figure()
+plt.hist(np.log10(x[x>0]), bins=30)
+plt.title("GDP per Capita (log10 scale, 2022)")
+plt.xlabel("log10(USD)")
+plt.ylabel("Count")
+plt.show()
+
+```
+
+**Summary — GDP per capita (2022)**  
+- The distribution is **highly right-skewed**: most countries cluster below ~\$20k, with a **long tail** of high-income economies.  
+- On a **log scale**, the distribution looks much closer to symmetric (roughly log-normal), which is typical for income variables.  
+- Interpretation: comparing countries on the **log** of GDP per capita (rather than raw USD) is more informative and reduces the influence of outliers.
+
+---
+
+## 2) Life expectancy (levels and relation to income)
+
+I inspect the distribution of life expectancy and its relationship with income (diminishing returns expected), a pattern first described by Preston [@preston1975].
+
+```{python}
+# brief summary
+print("Missing values (life_expectancy):", df["life_expectancy"].isna().sum())
+print(df["life_expectancy"].describe())
+```
+```{python}
+#| label: fig-le-vs-gdp
+#| fig-cap: "Life expectancy vs log₁₀(GDP per capita), 2022. Source: [World Bank WDI](https://databank.worldbank.org/source/world-development-indicators)."
+import numpy as np
+import matplotlib.pyplot as plt
+
+
+gdp_le = df[["gdp_per_capita","life_expectancy"]].dropna().copy()
+x = np.log10(gdp_le["gdp_per_capita"].values)
+y = gdp_le["life_expectancy"].values
+
+m, b = np.polyfit(x, y, 1)
+plt.figure()
+plt.scatter(x, y, alpha=0.7)
+plt.plot(np.sort(x), m*np.sort(x)+b, linewidth=2)
+plt.title("Life Expectancy vs log10(GDP per Capita), 2022")
+plt.xlabel("log10(GDP per Capita, USD)")
+plt.ylabel("Life Expectancy (years)")
+plt.grid(True, linewidth=0.3)
+plt.show()
+
+print(f"Correlation (life expectancy vs log10 GDP per capita): {np.corrcoef(x,y)[0,1]:.3f}")
+
+```
+**Summary — Life expectancy vs GDP per capita**  
+- There is a **strong positive association**: the correlation with **log₁₀(GDP per capita)** is about **0.84** in the output.  
+- The **slope flattens at higher incomes**, consistent with **diminishing returns** (gains in life expectancy are large at low incomes and smaller at high incomes), this finding aligns with macroeconomic theories discussed by Mankiw [@mankiw2019].
+.  
+- Takeaway: income is a powerful predictor of population health, especially among lower-income countries.
+---
+
+## 3) Inflation (levels and relation to growth)
+I examine inflation levels and its same-year association with GDP growth.
+
+```{python}
+# brief summary
+print("Missing values (inflation_rate):", df["inflation_rate"].isna().sum())
+print(df["inflation_rate"].describe())
+
+#| label: fig-growth-vs-infl
+#| fig-cap: "GDP growth vs inflation, 2022. Source: [World Bank WDI](https://databank.worldbank.org/source/world-development-indicators)."
+import numpy as np
+import matplotlib.pyplot as plt
+
+if "gdp_growth_rate" in df.columns:
+    infl_growth = df[["inflation_rate","gdp_growth_rate"]].dropna()
+    plt.figure()
+    plt.scatter(infl_growth["inflation_rate"], infl_growth["gdp_growth_rate"], alpha=0.7)
+    plt.title("GDP Growth vs Inflation (2022)")
+    plt.xlabel("Inflation rate (annual %)")
+    plt.ylabel("GDP growth (annual %)")
+    plt.grid(True, linewidth=0.3)
+    plt.show()
+
+    r = np.corrcoef(infl_growth["inflation_rate"], infl_growth["gdp_growth_rate"])[0,1]
+    print(f"Correlation (GDP growth vs inflation): {r:.3f}")
+else:
+    print("Column 'gdp_growth_rate' not found in the dataset.")
+
+```
+
+**Summary — GDP growth vs inflation (2022)**  
+- The cross-section shows a **weak negative correlation** (≈ **−0.14**), and the scatter is **very noisy**.  
+- Several **extreme-inflation outliers** pull the pattern around; excluding them would likely make the relationship even weaker.  
+- Same-year cross-sectional comparisons don’t identify causality—growth and inflation dynamics are **time-dependent**; panel/time-series analysis would be more appropriate.
+
+---
+
+## Visualisations
+
+### Top GDP per Capita (Bar Chart)
+
+As shown in (@fig-gdp-bar), high-income economies dominate the upper tail of GDP per capita in 2022.
+
+```{python}
+#| label: fig-gdp-bar
+#| fig-cap: "Top 12 countries by GDP per capita (2022). Source: [World Bank WDI](https://databank.worldbank.org/source/world-development-indicators)."
+import matplotlib.pyplot as plt
+
+gdp_top = (
+    df[["country", "gdp_per_capita"]]
+    .dropna()
+    .sort_values("gdp_per_capita", ascending=False)
+    .head(12)
+    .iloc[::-1]
+)
+
+plt.figure(figsize=(9,6))
+plt.barh(gdp_top["country"], gdp_top["gdp_per_capita"])
+plt.title("Top 12 GDP per Capita (USD), 2022")
+plt.xlabel("GDP per Capita (USD)")
+plt.ylabel("Country")
+plt.tight_layout()
+plt.show()
+```
+
+### Life Expectancy vs Income (Scatter)
+
+In (@fig-le-scatter), life expectancy rises with income, with diminishing returns at high income.
+
+```{python}
+#| echo: false
+#| fig-cap: "Life expectancy vs. log₁₀(GDP per capita), 2022. Source: [World Development Indicators — World Bank](https://databank.worldbank.org/source/world-development-indicators)."
+#| label: fig-le-scatter
+#| fig-alt: "Scatter plot of life expectancy versus the log10 of GDP per capita for 2022."
+
+import numpy as np
+import matplotlib.pyplot as plt
+
+data = df[["life_expectancy", "gdp_per_capita"]].dropna()
+x = np.log10(data["gdp_per_capita"].values)
+y = data["life_expectancy"].values
+
+# Trend line (least squares)
+m, b = np.polyfit(x, y, 1)
+
+plt.figure(figsize=(9,6))
+plt.scatter(x, y, alpha=0.7)
+plt.plot(np.sort(x), m*np.sort(x)+b, linewidth=2)
+plt.title("Life Expectancy vs log10(GDP per Capita), 2022")
+plt.xlabel("log10(GDP per Capita, USD)")
+plt.ylabel("Life Expectancy (years)")
+plt.grid(True, linewidth=0.3)
+plt.tight_layout()
+plt.show()
+```
+
+### Key Statistics Table
+Table @tbl-key-stats summarizes the indicators used in the analysis and supports the distributional findings in @fig-gdp-hist and the relationship in @fig-le-vs-gdp.
+
+```{python}
+#| label: tbl-key-stats
+#| tbl-cap: "Key statistics for selected indicators (2022). Source: [World Bank WDI](https://databank.worldbank.org/source/world-development-indicators)."
+import pandas as pd
+import numpy as np
+
+indicators = {
+    "gdp_per_capita": "GDP per capita (USD)",
+    "life_expectancy": "Life expectancy (years)",
+    "inflation_rate": "Inflation rate (%)",
+}
+
+use_cols = [c for c in indicators if c in df.columns]
+desc = (
+    df[use_cols]
+    .describe(percentiles=[], include="all")
+    .loc[["count","mean","50%","std","min","max"]]
+    .rename(index={"50%":"median"})
+    .T
+)
+
+def fmt_row(name, row):
+    row = row.copy()
+    if name == "gdp_per_capita":
+        for c in ["mean","median","std","min","max"]:
+            row[c] = f"{row[c]:,.0f}"
+    elif name in ["life_expectancy"]:
+        for c in ["mean","median","std","min","max"]:
+            row[c] = f"{row[c]:.1f}"
+    else:  # inflation_rate or other %
+        for c in ["mean","median","std","min","max"]:
+            row[c] = f"{row[c]:.2f}"
+    row["count"] = int(row["count"])
+    return row
+
+display_df = pd.DataFrame(
+    [fmt_row(name, desc.loc[name]) for name in desc.index],
+    index=[indicators[name] for name in desc.index]
+)[["count","mean","median","std","min","max"]]
+
+display_df
+```

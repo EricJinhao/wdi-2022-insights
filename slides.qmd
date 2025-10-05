@@ -1,0 +1,99 @@
+---
+title: "WDI 2022 Insights"
+author: "Jinhao Tian"
+date: "2025-10-04"
+format:
+  revealjs:
+    theme: simple
+    transition: fade
+    slide-number: true
+    toc: true
+execute:
+  echo: false
+  warning: false
+  message: false
+---
+
+# Welcome
+
+**World Development Indicators (2022)**  
+*An overview of global economic and social trends* 
+
+
+# GDP per Capita
+Overview
+- Large differences across countries  
+- High skewness toward wealthy nations  
+- Commonly analyzed on a **log scale**
+
+```{python}
+import pandas as pd, matplotlib.pyplot as plt, numpy as np
+
+df = pd.read_csv("wdi.csv")
+x = df["gdp_per_capita"].dropna()
+
+plt.hist(np.log10(x[x>0]), bins=25, color="steelblue", edgecolor="white")
+plt.title("GDP per Capita (log10 scale, 2022)")
+plt.xlabel("log10(USD)")
+plt.ylabel("Count")
+plt.tight_layout()
+plt.show()
+```
+Observation:
+Income distribution is highly skewed — most countries earn below $20,000 per capita,
+while a few advanced economies pull the upper tail.
+
+
+
+# Life Expectancy and Income
+- Strong positive relationship between income and health
+- Diminishing returns at high income levels
+
+```{python}
+gdp_le = df[["gdp_per_capita","life_expectancy"]].dropna()
+plt.scatter(np.log10(gdp_le["gdp_per_capita"]), gdp_le["life_expectancy"], alpha=0.7)
+plt.title("Life Expectancy vs GDP per Capita (2022)")
+plt.xlabel("log10(GDP per Capita, USD)")
+plt.ylabel("Life Expectancy (years)")
+plt.grid(True, linewidth=0.3)
+plt.show()
+
+```
+Observation:
+We see a clear positive relationship, but life expectancy increases at a slower rate among wealthier nations.
+
+
+
+# Inflation and Growth
+- Weak negative correlation between inflation and growth
+- High outliers cause instability
+
+```{python}
+if "gdp_growth_rate" in df.columns:
+    infl = df[["inflation_rate","gdp_growth_rate"]].dropna()
+    plt.scatter(infl["inflation_rate"], infl["gdp_growth_rate"], alpha=0.7)
+    plt.title("GDP Growth vs Inflation (2022)")
+    plt.xlabel("Inflation rate (%)")
+    plt.ylabel("GDP growth (%)")
+    plt.grid(True, linewidth=0.3)
+    plt.show()
+
+```
+Observation:
+Cross-sectional data shows no strong link between inflation and growth —
+temporal or panel data would provide better insights.
+
+
+
+# Conclusion
+Key Takeaways
+
+- Income disparities remain vast across nations.
+
+- Life expectancy rises with income, but plateaus at the top.
+
+- Inflation-growth relationships are weak cross-sectionally.
+
+
+# Thank you!
+WDI 2022 Analysis — Jinhao Tian
