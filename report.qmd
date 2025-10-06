@@ -2,7 +2,7 @@
 title: "WDI 2022 Report"
 author: "Jinhao Tian"
 date: "2025-10-04"
-kernel: qtm350
+jupyter: python3
 widgets: true
 format:
   html:
