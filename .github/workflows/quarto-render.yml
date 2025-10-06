@@ -1,0 +1,58 @@
+name: Quarto render
+
+# Tell Actions when to run
+on:
+  push:
+    paths:
+      - report.qmd
+      - slides.qmd
+      - wdi.csv
+      - requirements.txt
+      - .github/workflows/quarto-render.yml
+  workflow_dispatch:  # allows manual run from the Actions tab
+
+jobs:
+  render:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write  # needed to commit the rendered files back
+
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@v4
+
+      - name: Setup Quarto
+        uses: quarto-dev/quarto-actions/setup@v2
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Install Python deps
+        run: |
+          python -m pip install --upgrade pip
+          if [ -f requirements.txt ]; then
+            pip install -r requirements.txt
+          else
+            pip install pandas numpy matplotlib plotly ipywidgets
+          fi
+
+      - name: Render report & slides
+        run: |
+          # HTML report (exec + embedded resources so it works on Pages)
+          quarto render report.qmd --to html --execute --embed-resources
+          # Revealjs slides
+          quarto render slides.qmd --to revealjs
+
+      - name: Move outputs to docs/
+        run: |
+          mkdir -p docs
+          mv -f report.html docs/report.html
+          mv -f slides.html docs/slides.html || true
+
+      - name: Commit rendered files
+        uses: stefanzweifel/git-auto-commit-action@v5
+        with:
+          commit_message: "ci: render Quarto outputs"
+          branch: ${{ github.ref_name }}
