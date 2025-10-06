@@ -11,6 +11,7 @@ It includes a Quarto report and a Reveal.js presentation.
 -  [HTML Report](https://ericjinhao.github.io/wdi-2022-insights/report.html)
 -  [Presentation Slides](https://ericjinhao.github.io/wdi-2022-insights/slides.html)
 -  [PDF Report](report.pdf)
+-  [Repository](https://github.com/EricJinhao/wdi-2022-insights.git)
 
 ## Repository Contents
 - `report.qmd` — Quarto source for analysis  
