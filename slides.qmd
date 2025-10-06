@@ -13,6 +13,9 @@ execute:
   echo: false
   warning: false
   message: false
+  fig-width: 10     
+  fig-height: 6
+  fig-dpi: 160
   fig-format: png 
 ---
 
@@ -51,7 +54,18 @@ while a few advanced economies pull the upper tail.
 - Strong positive relationship between income and health
 - Diminishing returns at high income levels
 
+
+
+
+::: {.stretch}       
 ```{python}
+#| fig-width: 12
+#| fig-height: 7
+#| fig-dpi: 160
+#| out-width: 100%
+#| fig-align: center
+
+plt.figure(figsize=(12,7))
 gdp_le = df[["gdp_per_capita","life_expectancy"]].dropna()
 plt.scatter(np.log10(gdp_le["gdp_per_capita"]), gdp_le["life_expectancy"], alpha=0.7)
 plt.title("Life Expectancy vs GDP per Capita (2022)")
